@@ -1,0 +1,33 @@
+{
+  "name": "tshirt_store",
+  "version": "1.0.0",
+  "description": "you can buy branded t shirts here.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "tshirt",
+    "ecommerce",
+    "backend",
+    "nodeJS",
+    "expressJS",
+    "mongoBD"
+  ],
+  "author": "dinesh",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.0.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.9",
+    "express": "^4.18.3",
+    "express-fileupload": "^1.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.2.1",
+    "morgan": "^1.10.0",
+    "validator": "^13.11.0"
+  }
+}
