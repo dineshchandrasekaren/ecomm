@@ -1,9 +1,12 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const user = require("./routes/user");
-const home = require("./routes/view");
 const cloudinary = require("cloudinary");
 const fileUpload = require("express-fileupload");
+
+const user = require("./routes/user");
+const home = require("./routes/view");
+const mailHelper = require("./utils/mailHelper");
+
 let app = express();
 
 app.use(express.json());
@@ -16,6 +19,7 @@ app.use(
     tempFileDir: "/tmp/",
   })
 );
+
 app.set("view engine", "ejs");
 
 cloudinary.v2.config({

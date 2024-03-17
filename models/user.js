@@ -55,7 +55,13 @@ userSchema.methods.getJwtToken = function () {
 };
 
 userSchema.methods.verifyPassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
+  let isVerified = false;
+  try {
+    isVerified = await bcrypt.compare(password, this.password);
+  } catch (e) {
+    console.log(e.message);
+  }
+  return isVerified;
 };
 
 userSchema.methods.generateForgotPasswordToken = function () {
@@ -66,17 +72,6 @@ userSchema.methods.generateForgotPasswordToken = function () {
     .digest("hex");
   this.forgotPasswordExpiry = Date.now() + 20 * 60 * 1000;
   return forgotToken;
-};
-
-userSchema.methods.forgotTokenVerify = function (forgotToken) {
-  if (this.forgotPasswordExpiry < Date.now()) {
-    return (
-      this.forgotPasswordToken ===
-      crypto.createHash("sha256").update(forgotToken).digest("hex")
-    );
-  } else {
-    return false;
-  }
 };
 
 module.exports = model("user", userSchema);

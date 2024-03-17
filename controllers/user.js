@@ -2,7 +2,8 @@ const userModal = require("../models/user");
 const cloudinary = require("cloudinary");
 const { BigPromise } = require("../utils/BigPromise");
 const { setCookieToken } = require("../utils/cookieToken");
-
+const mailHelper = require("../utils/mailHelper");
+const crypto = require("crypto");
 exports.signup = BigPromise(async (req, res) => {
   let { name, password, email } = req.body;
   console.log({ name, password, email }, req.body);
@@ -41,7 +42,7 @@ exports.login = BigPromise(async (req, res) => {
     return;
   }
 
-  let user = await userModal.findOne({ email });
+  let user = await userModal.findOne({ email }).select("+password");
   if (!user) {
     return res.status(500).json({ error: "user not found signup" });
   }
@@ -61,3 +62,52 @@ exports.logout = async (req, res) => {
   }
   res.status(500).json({ message: "already logout" });
 };
+
+exports.forgotPassword = BigPromise(async (req, res) => {
+  let { email } = req.body;
+  if (!email) {
+    return res.json({ error: "Email cannot be empty" });
+  }
+  let user = await userModal.findOne({ email });
+  if (!user.email) {
+    return res.json({ error: "email not exist" });
+  }
+  let token = await user.generateForgotPasswordToken();
+  await user.save({ validateBeforeSave: false });
+  await mailHelper({
+    from: "dineshchandrasekaren@gmail.com",
+    to: "vickey@one.com",
+    subject: "Reset Password",
+    text: `${req.protocol}://${req.get("host")}/resetPassword/${token}`,
+  });
+  res.json({ success: true, user });
+});
+
+exports.resetPassword = BigPromise(async (req, res) => {
+  let { token } = req.params;
+
+  let forgotPasswordToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  let user = await userModal.findOne({
+    forgotPasswordToken,
+    forgotPasswordExpiry: { $gt: Date.now() },
+  });
+  if (!user) {
+    return res.status(500).json({ error: "user not found" });
+  }
+  const { password, confirmPassword } = req.body;
+
+  if (password !== confirmPassword) {
+    return res.status(500).json({ error: "password doesn't match" });
+  }
+
+  user.password = password;
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordExpiry = undefined;
+  await user.save();
+
+  res.status(200).json({ success: true, message: "password updated" });
+});
