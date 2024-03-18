@@ -20,6 +20,7 @@ app.use(
   })
 );
 
+app.use;
 app.set("view engine", "ejs");
 
 cloudinary.v2.config({

@@ -4,6 +4,8 @@ const { BigPromise } = require("../utils/BigPromise");
 const { setCookieToken } = require("../utils/cookieToken");
 const mailHelper = require("../utils/mailHelper");
 const crypto = require("crypto");
+const CustomError = require("../utils/customError");
+
 exports.signup = BigPromise(async (req, res) => {
   let { name, password, email } = req.body;
   console.log({ name, password, email }, req.body);
@@ -53,15 +55,21 @@ exports.login = BigPromise(async (req, res) => {
   setCookieToken(res, user);
 });
 
-exports.logout = async (req, res) => {
+exports.logout = BigPromise(async (req, res) => {
   if (req.cookies.token) {
-    return res.clearCookie("token").json({
-      success: true,
-      message: "logout successfully",
-    });
+    req.user = undefined;
+    return res
+      .cookie("token", null, {
+        expire: Date.now(),
+        httpOnly: true,
+      })
+      .json({
+        success: true,
+        message: "logout successfully",
+      });
   }
   res.status(500).json({ message: "already logout" });
-};
+});
 
 exports.forgotPassword = BigPromise(async (req, res) => {
   let { email } = req.body;
@@ -110,4 +118,42 @@ exports.resetPassword = BigPromise(async (req, res) => {
   await user.save();
 
   res.status(200).json({ success: true, message: "password updated" });
+});
+
+exports.getUserDashboardDetails = BigPromise(async (req, res, next) => {
+  let user = await userModal.findById(req.user.id);
+
+  if (!user) {
+    return next(new CustomError("user not exist", 401));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+exports.passwordUpdate = BigPromise(async (req, res, next) => {
+  let user = await userModal.findById(req.user.id).select("+password");
+
+  if (!user) {
+    return next(new CustomError("user not exist", 401));
+  }
+
+  const { oldPassword, password } = req.body;
+
+  let verifyPassword = await user.verifyPassword(oldPassword);
+
+  if (!verifyPassword) {
+    return next(new CustomError("old password is wrong"));
+  }
+
+  user.password = password;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "password successfully updated",
+    user,
+  });
 });
