@@ -54,14 +54,8 @@ userSchema.methods.getJwtToken = function () {
   });
 };
 
-userSchema.methods.verifyPassword = async function (password) {
-  let isVerified = false;
-  try {
-    isVerified = await bcrypt.compare(password, this.password);
-  } catch (e) {
-    console.log(e.message);
-  }
-  return isVerified;
+userSchema.methods.verifyPassword = async function (userEnteredPassword) {
+  return await bcrypt.compare(userEnteredPassword, this.password);
 };
 
 userSchema.methods.generateForgotPasswordToken = function () {

@@ -5,6 +5,7 @@ const { setCookieToken } = require("../utils/cookieToken");
 const mailHelper = require("../utils/mailHelper");
 const crypto = require("crypto");
 const CustomError = require("../utils/customError");
+const user = require("../models/user");
 
 exports.signup = BigPromise(async (req, res) => {
   let { name, password, email } = req.body;
@@ -48,7 +49,8 @@ exports.login = BigPromise(async (req, res) => {
   if (!user) {
     return res.status(500).json({ error: "user not found signup" });
   }
-  if (!user.verifyPassword(password)) {
+  const isPasswordVerified = await user.verifyPassword(password);
+  if (!isPasswordVerified) {
     return res.status(500).json({ error: "invalid password" });
   }
 
@@ -59,7 +61,7 @@ exports.logout = BigPromise(async (req, res) => {
   if (req.cookies.token) {
     req.user = undefined;
     return res
-      .cookie("token", null, {
+      .cookie("token", "", {
         expire: Date.now(),
         httpOnly: true,
       })
@@ -154,6 +156,131 @@ exports.passwordUpdate = BigPromise(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "password successfully updated",
+    user,
+  });
+});
+
+exports.updateUserDetails = BigPromise(async (req, res, next) => {
+  const { id } = req.user;
+
+  let newData = {
+    name: req.body.name,
+    email: req.body.email,
+  };
+
+  if (req.files) {
+    const user = await userModal.findById(id);
+    if (!user) {
+      return next(new CustomError("user not found", 404));
+    }
+    const imageId = user.photo.id;
+
+    let file = req.files.photo;
+
+    await cloudinary.v2.uploader.destroy(imageId);
+
+    let result = await cloudinary.v2.uploader.upload(file.tempFilePath, {
+      folder: "users",
+    });
+
+    newData.photo = {
+      id: result.public_id,
+      url: result.secure_url,
+    };
+  }
+
+  const user = await userModal.findByIdAndUpdate(id, newData, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "profile updated successfully",
+    user,
+  });
+});
+
+exports.getAdminDetails = BigPromise(async (req, res, next) => {
+  const { id } = req.user;
+  const user = await userModal.findById(id);
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+exports.getAllUsers = BigPromise(async (req, res, next) => {
+  const users = await userModal.find({ role: "user" });
+  res.status(200).json({
+    success: true,
+    message: "All users are fetched",
+    users,
+  });
+});
+exports.getUserByAdmin = BigPromise(async (req, res, next) => {
+  const { id } = req.params;
+  let user = await userModal.findOne({ _id: id, role: "user" });
+  if (!user) {
+    return next(new CustomError("user not exist"));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+exports.updateUserbyAdmin = BigPromise(async (req, res, next) => {
+  const { id } = req.params;
+  let newData = {
+    name: req.body.name,
+    email: req.body.email,
+    role: req.body.role,
+  };
+
+  if (req.files) {
+    const user = await userModal.findById(id);
+    if (!user) {
+      return next(new CustomError("user not found", 404));
+    }
+    await cloudinary.v2.uploader.destroy(user.photo.id);
+    let result = await cloudinary.v2.uploader.upload(
+      req.files.photo.tempFilePath,
+      {
+        folder: "user",
+      }
+    );
+    newData.photo = {
+      id: result.public_id,
+      url: result.secure_url,
+    };
+  }
+
+  let user = await userModal.findByIdAndUpdate(id, newData, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "user successfully updated",
+    user,
+  });
+});
+
+exports.removeUserByAdmin = BigPromise(async (req, res, next) => {
+  const { id } = req.params;
+
+  const user = await userModal.findOneAndDelete({ _id: id, role: "user" });
+
+  if (!user) {
+    return next(new CustomError("user not exist", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "user successfully deleted",
     user,
   });
 });

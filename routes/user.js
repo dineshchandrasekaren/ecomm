@@ -7,8 +7,14 @@ const {
   resetPassword,
   getUserDashboardDetails,
   passwordUpdate,
+  updateUserDetails,
+  getAdminDetails,
+  getAllUsers,
+  getUserByAdmin,
+  updateUserbyAdmin,
+  removeUserByAdmin,
 } = require("../controllers/user");
-const { isLoggedin } = require("../middlewares/user");
+const { isLoggedin, isCustomRole } = require("../middlewares/user");
 let router = express.Router();
 
 router.route("/signup").post(signup);
@@ -20,5 +26,15 @@ router
   .route("/getUserDashboardDetails")
   .get(isLoggedin, getUserDashboardDetails);
 router.route("/passwordUpdate").put(isLoggedin, passwordUpdate);
+router.route("/userDashboard/update").put(isLoggedin, updateUserDetails);
+router
+  .route("/getAdminDetails")
+  .get(isLoggedin, isCustomRole("admin"), getAdminDetails);
+router.route("/admin/user").get(isLoggedin, isCustomRole("admin"), getAllUsers);
+router
+  .route("/admin/user/:id")
+  .get(isLoggedin, isCustomRole("admin"), getUserByAdmin)
+  .post(isLoggedin, isCustomRole("admin"), updateUserbyAdmin)
+  .delete(isLoggedin, isCustomRole("admin"), removeUserByAdmin);
 
 module.exports = router;
