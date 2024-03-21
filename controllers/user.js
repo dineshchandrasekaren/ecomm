@@ -222,7 +222,7 @@ exports.getUserByAdmin = BigPromise(async (req, res, next) => {
   const { id } = req.params;
   let user = await userModal.findOne({ _id: id, role: "user" });
   if (!user) {
-    return next(new CustomError("user not exist"));
+    return next(new CustomError("user not exist", 404));
   }
 
   res.status(200).json({
