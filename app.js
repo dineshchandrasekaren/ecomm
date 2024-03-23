@@ -5,9 +5,17 @@ const fileUpload = require("express-fileupload");
 
 const user = require("./routes/user");
 const home = require("./routes/view");
-const mailHelper = require("./utils/mailHelper");
+
+const swaggerUi = require("swagger-ui-express");
+const fs = require("fs");
+const YAML = require("yaml");
 
 let app = express();
+
+const file = fs.readFileSync("./swagger.yaml", "utf8");
+const swaggerDocument = YAML.parse(file);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -20,7 +28,6 @@ app.use(
   })
 );
 
-app.use;
 app.set("view engine", "ejs");
 
 cloudinary.v2.config({

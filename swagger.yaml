@@ -1,0 +1,98 @@
+openapi: 3.0.0
+info:
+  title: T Shirt Store
+  description: This is just create  backend T shirt store.
+  version: 0.1.9
+servers:
+  - url: http://localhost:{port}/{version}
+    description: Optional server description, e.g. Main (production) server
+    variables:
+      version:
+        enum:
+          - "v1"
+          - "v2"
+        default: "v1"
+      port:
+        enum:
+          - "4000"
+          - "3000"
+        default: "4000"
+components:
+  securitySchemes:
+    cookieAuth: # arbitrary name for the security scheme; will be used in the "security" key later
+      type: apiKey
+      in: cookie
+      name: token
+paths:
+  /signup:
+    post:
+      summary: return user with jwt token.
+      description: this api is used to signup as user.
+      tags:
+        - user
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        "200": # status code
+          description: A JSON array of user names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: token=abcde12345; Path=/; HttpOnly
+  /login:
+    post:
+      summary: return user with jwt token.
+      description: this api is used to login as user.
+      tags:
+        - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+
+      responses:
+        "200": # status code
+          description: A JSON array of user names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: token=abcde12345; Path=/; HttpOnly
